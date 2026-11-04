@@ -1,0 +1,26 @@
+# Render blueprint for DesignLens.
+# Create the service from this file, then point designlens.app at it.
+services:
+  - type: web
+    name: designlens
+    runtime: docker
+    plan: starter
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeploy: true
+    disk:
+      name: designlens-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "8080"
+      - key: DATABASE_URL
+        value: /data/designlens.db
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: SKIP_DEMO_SEED
+        value: "0"
