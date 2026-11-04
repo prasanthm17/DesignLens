@@ -195,7 +195,13 @@ export async function capturePage(rawUrl: string, options: CaptureOptions): Prom
   const targetUrl = assertPublicTarget(rawUrl);
   await mkdir(options.screenshotDir, { recursive: true });
 
-  const browser: Browser = await chromium.launch({ headless: true });
+  const browser: Browser = await chromium.launch({
+    headless: true,
+    // Container-friendly flags: /dev/shm is small in Docker (Chromium crashes without this),
+    // and the image runs as root, which Chromium refuses unless the sandbox is disabled.
+    // The browser only ever renders the audit target inside a throwaway container.
+    args: ["--disable-dev-shm-usage", "--disable-gpu", "--no-sandbox", "--disable-setuid-sandbox"],
+  });
   const context = await browser.newContext({
     viewport: { width: DESKTOP.width, height: DESKTOP.height },
     deviceScaleFactor: 1,

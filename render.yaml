@@ -1,18 +1,18 @@
-# Render blueprint for DesignLens.
-# Create the service from this file, then point designlens.app at it.
+# Render blueprint for DesignLens — free tier.
+#
+# The free plan has no persistent disk, so SQLite lives in the container and the demo workspace is
+# reseeded on every boot. That suits a portfolio demo: visitors always land on clean authored data
+# and nothing private can accumulate. Trade-offs: the instance sleeps after ~15 min idle, and any
+# changes a visitor makes are lost on restart.
 services:
   - type: web
     name: designlens
     runtime: docker
-    plan: starter
+    plan: free
     region: singapore
     dockerfilePath: ./Dockerfile
     healthCheckPath: /api/health
     autoDeploy: true
-    disk:
-      name: designlens-data
-      mountPath: /data
-      sizeGB: 1
     envVars:
       - key: NODE_ENV
         value: production

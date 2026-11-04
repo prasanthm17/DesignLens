@@ -102,14 +102,26 @@ DesignLens is a long-running Node server with a SQLite file, so it needs a host 
 keeps a persistent disk. `Dockerfile` builds a production image with Chromium baked in, because the audit
 engine drives a real browser.
 
-### Any container host (Render, Railway, Fly.io)
+### Render — free tier
 
-1. Create a web service from this repository and let it build the `Dockerfile`.
-2. Attach a persistent disk mounted at `/data` — SQLite lives there, and without it every deploy resets.
-3. Set `SESSION_SECRET` to a long random value. Leave `ALLOW_PRIVATE_TARGETS` unset in production.
-4. Point the custom domain at the service.
+[`render.yaml`](render.yaml) declares the service, so it can be created in one step:
 
-`render.yaml` declares the same service as a blueprint.
+```text
+https://render.com/deploy?repo=https://github.com/prasanthm17/DesignLens
+```
+
+The free plan keeps no disk: SQLite lives inside the container and the demo workspace is reseeded on
+every boot, so visitors always land on clean authored data. The instance sleeps after ~15 minutes idle,
+so the first visit after a quiet period takes ~30-60s to wake (the Docker image is large because
+Chromium ships inside it). Audits still run — they just start cold.
+
+For a version that keeps visitor accounts and audits between restarts, add a persistent disk mounted at
+`/data` and use any paid plan.
+
+### Any other container host
+
+Railway, Fly.io, Koyeb and friends all work the same way: build the `Dockerfile`, mount a volume at
+`/data` if the plan allows one, and set `SESSION_SECRET`.
 
 ### Custom domain
 
