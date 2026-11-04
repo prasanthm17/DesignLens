@@ -1,9 +1,27 @@
 import { chromium, type Browser, type Page } from "playwright";
 import axeCore from "axe-core";
 import { mkdir, writeFile } from "fs/promises";
+import { existsSync } from "node:fs";
 import { join } from "path";
 import { VIEWPORT_META } from "@shared/catalog";
 import type { ViewportPreset } from "@shared/schema";
+
+/**
+ * True when the Chromium binary Playwright expects is actually on disk.
+ * A Node-runtime deploy without Playwright's browser download passes every
+ * request except an audit, so this is surfaced on /api/health.
+ */
+let browserProbe: boolean | null = null;
+export function browserAvailable(): boolean {
+  if (browserProbe === null) {
+    try {
+      browserProbe = existsSync(chromium.executablePath());
+    } catch {
+      browserProbe = false;
+    }
+  }
+  return browserProbe;
+}
 
 /* ------------------------------------------------------------------ *
  * Page capture layer.
@@ -194,6 +212,13 @@ export interface CaptureOptions {
 export async function capturePage(rawUrl: string, options: CaptureOptions): Promise<PageCapture> {
   const targetUrl = assertPublicTarget(rawUrl);
   await mkdir(options.screenshotDir, { recursive: true });
+
+  if (!browserAvailable()) {
+    throw new Error(
+      "The audit engine is unavailable on this server: Chromium is not installed. " +
+        "Deploy the Dockerfile (it bundles the browser) or run `npx playwright install --with-deps chromium`.",
+    );
+  }
 
   const browser: Browser = await chromium.launch({
     headless: true,
